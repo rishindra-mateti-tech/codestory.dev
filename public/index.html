@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Turn any repository into a guided learning path." />
+    <title>CodeStory.tools</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <a class="brand" href="/" aria-label="CodeStory home"><span class="brand-mark">C</span><span>CodeStory<span class="muted">.tools</span></span></a>
+        <p class="topbar-note">Local-first repository learning</p>
+      </header>
+
+      <section id="welcome" class="welcome">
+        <div class="hero-copy">
+          <p class="eyebrow">Understand before you change</p>
+          <h1>Every repository has a story.<br /><em>Learn how it works.</em></h1>
+          <p class="hero-description">Paste a GitHub URL or point to a local folder. CodeStory shows the frontend, backend, data, UI elements, and exact source connections, then guides you to true codebase ownership.</p>
+        </div>
+        <form id="analyze-form" class="analyze-panel">
+          <label for="target">Repository URL or local folder</label>
+          <div class="input-row">
+            <input id="target" name="target" placeholder="https://github.com/owner/repository" autocomplete="off" required />
+            <button type="submit"><span>Create story</span><span aria-hidden="true">↗</span></button>
+          </div>
+          <fieldset class="model-choice">
+            <legend>Explanation engine</legend>
+            <div class="provider-tabs" role="radiogroup" aria-label="Explanation engine">
+              <label><input type="radio" name="provider" value="ollama" checked /><span>Recommended: private local AI</span></label>
+              <label><input type="radio" name="provider" value="gemini" /><span>Bring an API key</span></label>
+              <label><input type="radio" name="provider" value="static" /><span>Map only</span></label>
+            </div>
+            <div id="gemini-fields" class="provider-fields hidden"><select id="api-provider" aria-label="API provider"><option value="gemini">Gemini API · free tier available</option><option value="openai">OpenAI API</option><option value="openrouter">OpenRouter API</option><option value="compatible">Custom OpenAI-compatible API</option></select><input id="gemini-key" type="password" placeholder="Paste API key for this session only" autocomplete="off" /><input id="api-model" value="gemini-3.5-flash" placeholder="Model name" /><input id="api-base" class="hidden" placeholder="Custom API base URL, e.g. https://provider.example/v1" /><a id="api-help" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">No key? Gemini is free to start. Create a restricted key in Google AI Studio ↗</a></div>
+            <div id="ollama-fields" class="provider-fields"><div class="local-ai-card"><strong>Private local AI, explained</strong><p>Ollama runs a model on your computer. CodeStory sends the repository only to <code>localhost</code>, not a cloud provider.</p><ol><li>Install Ollama once.</li><li>Download a coding model once.</li><li>CodeStory detects it automatically.</li></ol><div id="ollama-status" class="ollama-status">Checking whether Ollama is ready…</div></div><label for="ollama-model">Choose a local code model</label><select id="ollama-model"><option value="qwen2.5-coder:7b">Recommended · Qwen 2.5 Coder 7B · better explanations, needs a capable laptop</option><option value="qwen2.5-coder:3b">Lightweight · Qwen 2.5 Coder 3B · best for smaller laptops</option><option value="deepseek-coder:6.7b">Alternative · DeepSeek Coder 6.7B · code-focused</option><option value="codegemma:7b">Alternative · CodeGemma 7B · code understanding</option></select><div class="setup-actions"><a href="https://ollama.com/download" target="_blank" rel="noreferrer">1. Download Ollama ↗</a><button type="button" id="install-local-model">2. Download selected model</button><button type="button" id="check-ollama">Check setup</button></div><p class="model-warning">Models are downloaded separately because they are large files and should never be silently installed. Static mode remains available as a safe fallback.</p></div>
+          </fieldset>
+          <div class="safe-note"><span class="safe-dot"></span><span>Read-only scan. CodeStory never runs project scripts.</span></div>
+          <p id="form-error" class="form-error" role="alert"></p>
+        </form>
+        <div class="feature-rail" aria-label="CodeStory features">
+          <div><span class="rail-number">01</span><strong>Source-grounded</strong><p>Every conclusion points to the files behind it.</p></div>
+          <div><span class="rail-number">02</span><strong>Learning path</strong><p>Study a project in the order it becomes understandable.</p></div>
+          <div><span class="rail-number">03</span><strong>Local-first</strong><p>Analyze folders without uploading private source code.</p></div>
+        </div>
+      </section>
+
+      <section id="workspace" class="workspace hidden" aria-live="polite">
+        <aside class="sidebar">
+          <a class="brand sidebar-brand" href="/"><span class="brand-mark">C</span><span>CodeStory<span class="muted">.tools</span></span></a>
+          <div class="repo-identity"><span id="repo-initial" class="repo-initial">R</span><div><strong id="repo-name">Repository</strong><small id="repo-source">Local analysis</small></div></div>
+          <nav class="nav" aria-label="Learning workspace">
+            <button class="nav-item active" data-view="story">Overview</button>
+            <button class="nav-item" data-view="direct">Architecture</button>
+          <button class="nav-item" data-view="trace">Feature trace</button>
+          <button class="nav-item" data-view="impact">Change impact</button>
+          <button class="nav-item" data-view="trace-lesson">Trace lesson</button>
+            <button class="nav-item" data-view="detailed">UI & source inspector</button>
+            <button class="nav-item" data-view="path">Learn & prove</button>
+            <button class="nav-item" data-view="build">Build from scratch</button>
+            <button class="nav-item" data-view="library">Concept Library</button>
+            <button class="nav-item" data-view="materials">Evidence & materials</button>
+            <button class="nav-item" data-view="ask">Ask CodeStory</button>
+          </nav>
+          <div class="sidebar-footer"><span class="safe-dot"></span> Source remains local</div>
+        </aside>
+        <div class="content">
+          <div id="loading" class="loading-view"><div class="scan-lines"><span></span><span></span><span></span></div><p>Reading the repository’s first chapter…</p><small>Mapping files, imports, and likely functions locally.</small></div>
+          <div id="views" class="hidden">
+            <section class="view active" id="story-view"></section>
+            <section class="view" id="direct-view"></section>
+          <section class="view" id="trace-view"></section>
+          <section class="view" id="impact-view"></section>
+          <section class="view" id="trace-lesson-view"></section>
+            <section class="view" id="detailed-view"></section>
+            <section class="view" id="path-view"></section>
+            <section class="view" id="build-view"></section>
+            <section class="view" id="library-view"></section>
+            <section class="view" id="materials-view"></section>
+            <section class="view" id="ask-view"></section>
+          </div>
+        </div>
+      </section>
+    </main>
+    <div id="concept-modal" class="concept-modal hidden" role="dialog" aria-modal="true" aria-labelledby="concept-title"><div class="concept-backdrop" data-close-concept></div><article class="concept-panel"><button class="close-concept" data-close-concept aria-label="Close explanation">×</button><p class="page-kicker" id="concept-type">Concept</p><h2 id="concept-title">Concept</h2><div id="concept-content"></div><div class="lens-switch"><button data-lens="story">Story</button><button data-lens="direct">Direct</button><button data-lens="detailed">Detailed</button></div></article></div>
+    <div id="deep-question-modal" class="concept-modal hidden" role="dialog" aria-modal="true" aria-labelledby="deep-question-title"><div class="concept-backdrop" data-close-deep></div><article class="concept-panel"><button class="close-concept" data-close-deep aria-label="Close deep question">×</button><p class="page-kicker">Focused learning assistant</p><h2 id="deep-question-title">Ask a deeper question</h2><p class="concept-answer">Use this after a source mission when you want cross-questions, trade-offs, or an explanation for one area. Adding an API key is optional and stays only in this browser session.</p><label class="deep-label">Provider<select id="deep-provider"><option value="static">Source map only</option><option value="ollama">Local Ollama</option><option value="gemini">API provider</option></select></label><div id="deep-api-fields" class="provider-fields hidden"><select id="deep-api-provider"><option value="gemini">Gemini API</option><option value="openai">OpenAI API</option><option value="openrouter">OpenRouter API</option><option value="compatible">Custom compatible API</option></select><input id="deep-api-key" type="password" autocomplete="off" placeholder="API key for this session only" /><input id="deep-model" value="gemini-3.5-flash" placeholder="Model name" /><input id="deep-api-base" class="hidden" placeholder="Custom API base URL" /></div><div id="deep-ollama-fields" class="provider-fields hidden"><select id="deep-ollama-model"><option value="qwen2.5-coder:7b">Qwen 2.5 Coder 7B</option><option value="qwen2.5-coder:3b">Qwen 2.5 Coder 3B</option></select></div><label class="deep-label">Question<textarea id="deep-question-input" placeholder="How does this UI control reach the agent logic, and what could replace it?"></textarea></label><button id="ask-deep-question" class="primary-inline">Ask about this area</button><div id="deep-answer" class="deep-answer"></div></article></div>
+    <div id="source-modal" class="concept-modal hidden" role="dialog" aria-modal="true" aria-labelledby="source-title"><div class="concept-backdrop" data-close-source></div><article class="concept-panel source-panel"><button class="close-concept" data-close-source aria-label="Close source">×</button><p class="page-kicker">Observed source</p><h2 id="source-title">Source</h2><p id="source-caption" class="detail-meta"></p><pre id="source-code" class="source-code"></pre></article></div>
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "codestory-tools",
+  "version": "1.0.0",
+  "description": "Turn any repository into a source-grounded learning path.",
+  "type": "module",
+  "bin": {
+    "codestory": "./cli.js"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "start:mac": "node cli.js start",
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check cli.js && node --check public/app.js",
+    "test": "node --test test/*.test.js"
+  },
+  "keywords": [
+    "codebase",
+    "learning",
+    "github",
+    "developer-tools",
+    "local-first"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^5.4.530"
+  }
+}

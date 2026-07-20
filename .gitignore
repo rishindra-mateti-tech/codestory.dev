@@ -1,0 +1,5 @@
+node_modules/
+.codestory/
+codestory-output/
+.env
+.DS_Store
