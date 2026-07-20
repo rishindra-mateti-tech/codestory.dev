@@ -4,49 +4,58 @@
 
 CodeStory is a local-first learning companion for unfamiliar GitHub repositories. Paste a public GitHub URL or choose a local folder, then learn through three connected views of the same source evidence: a story, a direct system map, and an expandable technical breakdown.
 
-## Quick start
+## Start here (normal users)
 
-You need [Node.js 20 or newer](https://nodejs.org/) and Git. Run this once after cloning:
+You need [Node.js 20 or newer](https://nodejs.org/). Git is only needed if you choose to clone the project instead of downloading it.
 
-```bash
+**Important:** run `npm install` only *inside the CodeStory folder* — the folder that contains `package.json`. If your terminal says it cannot find `package.json`, you are one folder too high (for example, `C:\Users\rishi`) and must open the CodeStory folder first.
+
+### Windows — easiest method
+
+1. On GitHub, click **Code** → **Download ZIP**. Extract the ZIP anywhere you like.
+2. Open the extracted `codestory.dev` folder in File Explorer. You should see `package.json`, `server.js`, and `Start CodeStory.vbs`.
+3. Click the File Explorer address bar, type `cmd`, and press Enter. This opens Command Prompt in the correct folder.
+4. Run these two commands:
+
+```bat
 npm install
-```
-
-### Windows
-
-Double-click **Start CodeStory.vbs**. It starts the local server and opens CodeStory in your browser at `http://localhost:4197`.
-
-### macOS
-
-In Finder, right-click **Start CodeStory.command**, choose **Open**, then approve it the first time macOS asks. It opens CodeStory in your browser at `http://localhost:4173`.
-
-If macOS says the file is not executable, open Terminal in this folder once and run:
-
-```bash
-chmod +x "Start CodeStory.command"
-```
-
-### Any operating system
-
-Start it from a terminal:
-
-```bash
 npm start
 ```
 
-Open `http://localhost:4173`, paste a public GitHub repository URL or select a local folder path, and choose **Create story**.
+5. Open [http://localhost:4173](http://localhost:4173) in your browser.
 
-On macOS, this equivalent command also opens the browser automatically:
+After the first `npm install`, you can also double-click **Start CodeStory.vbs** to start it at [http://localhost:4197](http://localhost:4197).
 
-```bash
-npm run start:mac
-```
-
-To study the current folder from a terminal:
+### Clone with Git (Windows, macOS, or Linux)
 
 ```bash
-node cli.js learn .
+git clone https://github.com/rishindra-mateti-tech/codestory.dev.git
+cd codestory.dev
+npm install
+npm start
 ```
+
+Then open [http://localhost:4173](http://localhost:4173).
+
+### macOS
+
+After cloning or downloading and extracting the project, open Terminal **inside the `codestory.dev` folder**, then run:
+
+```bash
+npm install
+chmod +x "Start CodeStory.command"
+./Start\ CodeStory.command
+```
+
+If macOS asks, choose **Open**. CodeStory opens in your browser at [http://localhost:4173](http://localhost:4173).
+
+### What to do in CodeStory
+
+Paste a public GitHub repository URL or enter a local folder path, choose **Create story**, then explore the architecture, UI/source inspector, learning route, CodeLab, and source-grounded chat.
+
+### Do I need an API key?
+
+No. Static analysis, architecture maps, contracts, traces, learning routes, and CodeLab work without an API key. An optional Gemini key or local Ollama model only gives richer natural-language explanations.
 
 ## What CodeStory v1 does
 
@@ -100,11 +109,13 @@ npm test
 npm start
 ```
 
-## Demo
+## For contributors and Buildweek judges
 
-Use [DEMO.md](DEMO.md) for the 90-second Buildweek demo and the precise claims that are safe to make about CodeStory.
+Most users do **not** need these files. They are only for contributors, demo presenters, and people who want implementation details:
 
-For the complete product behavior, evidence rules, architecture, and limitations, read the [Product & Architecture Guide](docs/PRODUCT_AND_ARCHITECTURE.md). For the v1 definition of done and validation record, read [V1 Release Notes](docs/V1_RELEASE.md).
+- [DEMO.md](DEMO.md): 90-second Buildweek demo script.
+- [Product & Architecture Guide](docs/PRODUCT_AND_ARCHITECTURE.md): evidence rules, implementation design, and limitations.
+- [V1 Release Notes](docs/V1_RELEASE.md): v1 scope and validation record.
 
 ## License
 
