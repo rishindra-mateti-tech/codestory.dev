@@ -5,7 +5,6 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
-import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
 import AdmZip from 'adm-zip';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -160,6 +159,7 @@ async function extractPdfText(file) {
   try {
     const data = new Uint8Array(await fs.readFile(file));
     if (data.byteLength > 15_000_000) return { text: '', pages: 0, warning: 'PDF is larger than 15 MB, so CodeStory only catalogued it.' };
+    const { getDocument } = await import('pdfjs-dist/legacy/build/pdf.mjs');
     const task = getDocument({ data, disableWorker: true });
     const document = await task.promise;
     const pages = Math.min(document.numPages, 20);
