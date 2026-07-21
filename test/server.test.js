@@ -278,6 +278,18 @@ test('verifies a trace lesson on the server without exposing its answer in the a
   assert.ok(verification.body.evidence.length > 0);
 });
 
+test('verifies a learning answer after a hosted session is no longer in server memory', async () => {
+  const analysis = globalThis.analysis;
+  const lesson = analysis.traceLessons.find(item => item.questions.length);
+  const question = lesson.questions[0];
+  assert.ok(question.verificationToken);
+  assert.equal(Object.hasOwn(question, 'answer'), false);
+  const verification = await request('/api/challenge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: 'session-moved-to-another-server', challengeId: question.id, answer: question.options[0], verificationToken: question.verificationToken }) });
+  assert.equal(verification.response.status, 200);
+  assert.equal(verification.body.correct, true);
+  assert.ok(verification.body.correctAnswer);
+});
+
 test('returns a bounded, session-scoped source window for an observed line', async () => {
   const analysis = globalThis.analysis;
   const { response, body } = await request('/api/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: analysis.sessionId, path: 'src/app.tsx', line: 3 }) });

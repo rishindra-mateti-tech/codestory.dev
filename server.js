@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { randomUUID } from 'node:crypto';
+import { createCipheriv, createDecipheriv, createHash, randomBytes, randomUUID } from 'node:crypto';
 import AdmZip from 'adm-zip';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +18,10 @@ const MAX_REPOSITORY_FILES = 500;
 const MAX_SOURCE_FILES = 160;
 const REMOTE_CLONE_TIMEOUT_MS = 240_000;
 const MAX_REMOTE_ARCHIVE_BYTES = 25 * 1024 * 1024;
+const MAX_REMOTE_SAMPLE_FILES = 220;
+const MAX_REMOTE_SAMPLE_FILE_BYTES = 1_500_000;
+const CHALLENGE_TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
+const challengeTokenKey = createHash('sha256').update(process.env.CODESTORY_CHALLENGE_TOKEN_SECRET || 'codestory-learning-token-v1-change-this-with-an-environment-secret').digest();
 const isHosted = process.env.CODESTORY_HOSTED === 'true' || process.env.VERCEL === '1';
 const sessions = new Map();
 let conceptLibraryPromise;
@@ -84,13 +88,17 @@ async function downloadGithubArchive(input) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), REMOTE_CLONE_TIMEOUT_MS);
   try {
+    const metadataResponse = await fetch(`https://api.github.com/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`, { signal: controller.signal, headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CodeStory-tools' } });
+    if (!metadataResponse.ok) throw new Error(metadataResponse.status === 404 ? 'That GitHub repository was not found or is not public.' : `GitHub could not inspect this repository (HTTP ${metadataResponse.status}).`);
+    const metadata = await metadataResponse.json();
+    if (Number(metadata.size || 0) * 1024 > MAX_REMOTE_ARCHIVE_BYTES) return downloadGithubSourceSample(repository, input, metadata.default_branch || 'HEAD', controller.signal);
     const archiveUrl = `https://codeload.github.com/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/zip/HEAD`;
     const response = await fetch(archiveUrl, { signal: controller.signal, redirect: 'follow' });
     if (!response.ok) throw new Error(response.status === 404 ? 'That GitHub repository was not found or is not public.' : `GitHub could not download this repository (HTTP ${response.status}).`);
     const declaredSize = Number(response.headers.get('content-length') || 0);
-    if (declaredSize > MAX_REMOTE_ARCHIVE_BYTES) throw new Error('This public repository archive is larger than 25 MB. Clone it locally and study the folder with CodeStory instead.');
+    if (declaredSize > MAX_REMOTE_ARCHIVE_BYTES) return downloadGithubSourceSample(repository, input, metadata.default_branch || 'HEAD', controller.signal);
     const archive = Buffer.from(await response.arrayBuffer());
-    if (archive.length > MAX_REMOTE_ARCHIVE_BYTES) throw new Error('This public repository archive is larger than 25 MB. Clone it locally and study the folder with CodeStory instead.');
+    if (archive.length > MAX_REMOTE_ARCHIVE_BYTES) return downloadGithubSourceSample(repository, input, metadata.default_branch || 'HEAD', controller.signal);
     const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'codestory-'));
     const folder = path.join(cloneRoot, 'repository');
     await fs.mkdir(folder, { recursive: true });
@@ -117,6 +125,56 @@ async function downloadGithubArchive(input) {
     if (error.name === 'AbortError') throw new Error('This public repository took longer than four minutes to download. Clone it locally, then choose its folder so CodeStory can scan it without a network deadline.');
     throw error;
   } finally { clearTimeout(timer); }
+}
+
+function remoteSamplePriority(file) {
+  const lower = file.path.toLowerCase();
+  if (/^(readme|contributing|architecture|overview)\.(md|mdx|txt)$/i.test(file.path)) return 0;
+  if (/^(package\.json|pyproject\.toml|requirements\.txt|requirements\.in|setup\.py|setup\.cfg|cargo\.toml|go\.mod|pom\.xml)$/i.test(file.path)) return 1;
+  if (lower.endsWith('.ipynb')) return 2;
+  if (codeExtensions.has(path.extname(lower))) return 3;
+  return 4;
+}
+
+function canSampleRemoteFile(file) {
+  if (!file?.path || file.type !== 'blob' || Number(file.size || 0) > MAX_REMOTE_SAMPLE_FILE_BYTES) return false;
+  const parts = file.path.split('/');
+  if (parts.some(part => ignoredDirectories.has(part) || part.startsWith('.'))) return false;
+  const lower = file.path.toLowerCase();
+  const extension = path.extname(lower);
+  return codeExtensions.has(extension) || ['.md', '.mdx', '.txt', '.json', '.yaml', '.yml', '.toml'].includes(extension) || /(^|\/)readme[^/]*$/i.test(file.path);
+}
+
+async function downloadGithubSourceSample(repository, source, branch, signal) {
+  const treeUrl = `https://api.github.com/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/git/trees/${encodeURIComponent(branch)}?recursive=1`;
+  const treeResponse = await fetch(treeUrl, { signal, headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CodeStory-tools' } });
+  if (!treeResponse.ok) throw new Error(`GitHub could not list this large repository (HTTP ${treeResponse.status}).`);
+  const tree = await treeResponse.json();
+  const selected = (tree.tree || []).filter(canSampleRemoteFile).sort((left, right) => remoteSamplePriority(left) - remoteSamplePriority(right) || left.path.localeCompare(right.path)).slice(0, MAX_REMOTE_SAMPLE_FILES);
+  if (!selected.length) throw new Error('CodeStory could not find readable source files in this repository.');
+  const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'codestory-'));
+  const folder = path.join(cloneRoot, 'repository');
+  await fs.mkdir(folder, { recursive: true });
+  const downloadOne = async file => {
+    const encodedPath = file.path.split('/').map(encodeURIComponent).join('/');
+    const rawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/${encodeURIComponent(branch)}/${encodedPath}`;
+    try {
+      const response = await fetch(rawUrl, { signal, headers: { 'User-Agent': 'CodeStory-tools' } });
+      if (!response.ok) return;
+      const declaredSize = Number(response.headers.get('content-length') || 0);
+      if (declaredSize > MAX_REMOTE_SAMPLE_FILE_BYTES) return;
+      const content = Buffer.from(await response.arrayBuffer());
+      if (content.length > MAX_REMOTE_SAMPLE_FILE_BYTES) return;
+      const destination = path.resolve(folder, file.path);
+      if (!destination.startsWith(`${folder}${path.sep}`)) return;
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, content);
+    } catch (error) {
+      if (error.name === 'AbortError') throw error;
+    }
+  };
+  for (let index = 0; index < selected.length; index += 8) await Promise.all(selected.slice(index, index + 8).map(downloadOne));
+  return { folder, source, temporary: true, remoteSample: { selected: selected.length, treeTruncated: Boolean(tree.truncated) } };
 }
 
 async function resolveTarget(input) {
@@ -1850,7 +1908,34 @@ function chooseChallengeSet(bank, scope = 'all', requested = 10) {
 
 function publicChallenge(question) {
   const { answer, priority, coverageKey, scope, ...safe } = question;
-  return safe;
+  return { ...safe, verificationToken: createChallengeToken(question) };
+}
+
+function createChallengeToken(question) {
+  const payload = Buffer.from(JSON.stringify({
+    id: question.id,
+    answer: question.answer,
+    score: question.score,
+    evidence: question.evidence,
+    explanation: question.explanation,
+    expiresAt: Date.now() + CHALLENGE_TOKEN_TTL_MS
+  }));
+  const iv = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', challengeTokenKey, iv);
+  const encrypted = Buffer.concat([cipher.update(payload), cipher.final()]);
+  return `${iv.toString('base64url')}.${encrypted.toString('base64url')}.${cipher.getAuthTag().toString('base64url')}`;
+}
+
+function readChallengeToken(token, expectedId) {
+  try {
+    const [ivText, encryptedText, tagText] = String(token || '').split('.');
+    if (!ivText || !encryptedText || !tagText) return null;
+    const decipher = createDecipheriv('aes-256-gcm', challengeTokenKey, Buffer.from(ivText, 'base64url'));
+    decipher.setAuthTag(Buffer.from(tagText, 'base64url'));
+    const payload = JSON.parse(Buffer.concat([decipher.update(Buffer.from(encryptedText, 'base64url')), decipher.final()]).toString('utf8'));
+    if (payload.id !== expectedId || !payload.answer || Number(payload.expiresAt) < Date.now()) return null;
+    return payload;
+  } catch { return null; }
 }
 
 function jsonFromModel(text) {
@@ -2043,6 +2128,7 @@ async function analyze(input, settings = { provider: 'static' }) {
     const traceLearning = buildTraceLearning(analysis);
     analysis.traceLessons = traceLearning.lessons;
     if (analysis.scan.truncated) analysis.anatomy.notes.push(`Large-repository scan: CodeStory inspected ${analysis.scan.filesRead} files and read ${analysis.scan.sourceFilesRead} source files. Conclusions cover this source-grounded sample, not every file in the repository.`);
+    if (target.remoteSample) analysis.anatomy.notes.push(`Large remote repository: CodeStory selected ${target.remoteSample.selected} readable files from GitHub${target.remoteSample.treeTruncated ? ' from a truncated GitHub tree listing' : ''}. This learning map is source-grounded in that representative sample, not a claim about every file in the full repository.`);
     analysis.materials = buildMaterials(files);
     for (const material of analysis.materials.filter(item => item.kind === 'PDF or research paper').slice(0, 8)) {
       const extracted = await extractPdfText(path.join(target.folder, material.path));
@@ -2208,9 +2294,8 @@ export async function handler(req, res) {
     try {
       const body = await readBody(req);
       const session = sessions.get(body.sessionId);
-      if (!session) return send(res, 410, { error: 'This local learning session expired. Analyze the repository again.' });
-      const challenge = session.challenges?.get(body.challengeId);
-      if (!challenge) return send(res, 404, { error: 'That learning challenge is not available in this session.' });
+      const challenge = session?.challenges?.get(body.challengeId) || readChallengeToken(body.verificationToken, body.challengeId);
+      if (!challenge) return send(res, 410, { error: 'This learning check expired. Analyze the repository again to create a fresh route.' });
       const correct = String(body.answer || '') === challenge.answer;
       return send(res, 200, {
         correct,

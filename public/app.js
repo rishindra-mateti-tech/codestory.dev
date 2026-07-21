@@ -174,7 +174,7 @@ function traceLessonProgressKey() { return `codestory-trace-lesson-${state.analy
 function getTraceLessonProgress() { try { return JSON.parse(localStorage.getItem(traceLessonProgressKey()) || '{}'); } catch { return {}; } }
 function traceLessonQuestionMarkup(question, progress) {
   const passed = Boolean(progress[question.id]);
-  return `<article class="trace-question ${passed ? 'passed' : ''}" data-trace-question="${esc(question.id)}"><div><span>${esc(question.kind)}</span><b>${question.score} pts</b></div><p class="trace-question-study">${esc(question.lesson)}</p><h4>${esc(question.prompt)}</h4><div class="mission-options">${question.options.map(option => `<button type="button" data-trace-answer="${esc(option)}" ${passed ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="mission-feedback" id="trace-feedback-${esc(question.id)}">${passed ? 'Passed. Explain the answer in your own words, then revisit the relevant source line.' : 'Study the lesson evidence, then choose an answer.'}</div></article>`;
+  return `<article class="trace-question ${passed ? 'passed' : ''}" data-trace-question="${esc(question.id)}" data-trace-token="${esc(question.verificationToken || '')}"><div><span>${esc(question.kind)}</span><b>${question.score} pts</b></div><p class="trace-question-study">${esc(question.lesson)}</p><h4>${esc(question.prompt)}</h4><div class="mission-options">${question.options.map(option => `<button type="button" data-trace-answer="${esc(option)}" ${passed ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="mission-feedback" id="trace-feedback-${esc(question.id)}">${passed ? 'Passed. Explain the answer in your own words, then revisit the relevant source line.' : 'Study the lesson evidence, then choose an answer.'}</div></article>`;
 }
 function renderTraceLesson(a) {
   const view = document.querySelector('#trace-lesson-view');
@@ -192,13 +192,13 @@ function renderTraceLesson(a) {
   wireSourceLinks(view);
   view.querySelectorAll('[data-trace-lesson]').forEach(button => button.addEventListener('click', () => { state.traceLessonId = button.dataset.traceLesson; renderTraceLesson(a); }));
   view.querySelector('[data-open-trace]')?.addEventListener('click', () => { state.traceId = active.id; renderTrace(a); activate('trace'); });
-  view.querySelectorAll('[data-trace-question]').forEach(card => card.querySelectorAll('[data-trace-answer]').forEach(button => button.addEventListener('click', () => verifyTraceLessonQuestion(card.dataset.traceQuestion, button.dataset.traceAnswer))));
+  view.querySelectorAll('[data-trace-question]').forEach(card => card.querySelectorAll('[data-trace-answer]').forEach(button => button.addEventListener('click', () => verifyTraceLessonQuestion(card.dataset.traceQuestion, button.dataset.traceAnswer, card.dataset.traceToken))));
 }
-async function verifyTraceLessonQuestion(challengeId, answer) {
+async function verifyTraceLessonQuestion(challengeId, answer, verificationToken) {
   const feedback = document.querySelector(`#trace-feedback-${challengeId}`); if (!feedback) return;
   feedback.textContent = 'Checking the cited source evidence...';
   try {
-    const response = await fetch('/api/challenge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: state.analysis.sessionId, challengeId, answer }) });
+    const response = await fetch('/api/challenge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: state.analysis.sessionId, challengeId, answer, verificationToken }) });
     const result = await response.json(); if (!response.ok) throw new Error(result.error);
     const card = feedback.closest('[data-trace-question]');
     card?.querySelectorAll('[data-trace-answer]').forEach(button => {
@@ -283,7 +283,7 @@ function renderPath(a, selectedChallenges = a.challenges || [], selection = { sc
   const score = selectedChallenges.reduce((total, challenge) => total + (passed[challenge.id] ? challenge.score : 0), 0);
   const missions = visibleChallenges.map((challenge, index) => {
     const studyEvidence = (challenge.evidence || []).slice(0, 2).map(evidenceButton).join('');
-    return `<article class="mission ${passed[challenge.id] ? 'passed' : ''}" data-mission="${esc(challenge.id)}"><div class="mission-top"><span>Mission ${firstQuestion + index + 1}</span><b>${challenge.score} pts</b></div><div class="mission-study"><span>${esc(challenge.kind || 'Understand the code')}</span><strong>Learn before you answer</strong><p>${esc(challenge.lesson || 'Read the cited source first. Explain the responsibility before choosing an answer.')}</p><div class="mission-evidence">${studyEvidence}</div></div><h3>${esc(challenge.prompt)}</h3><div class="mission-options">${challenge.options.map(option => `<button type="button" data-answer="${esc(option)}" ${passed[challenge.id] ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="mission-feedback" id="feedback-${esc(challenge.id)}">${passed[challenge.id] ? 'Passed. Re-open the source evidence and explain this in your own words.' : 'Choose an answer after studying the source evidence.'}</div></article>`;
+    return `<article class="mission ${passed[challenge.id] ? 'passed' : ''}" data-mission="${esc(challenge.id)}" data-verification-token="${esc(challenge.verificationToken || '')}"><div class="mission-top"><span>Mission ${firstQuestion + index + 1}</span><b>${challenge.score} pts</b></div><div class="mission-study"><span>${esc(challenge.kind || 'Understand the code')}</span><strong>Learn before you answer</strong><p>${esc(challenge.lesson || 'Read the cited source first. Explain the responsibility before choosing an answer.')}</p><div class="mission-evidence">${studyEvidence}</div></div><h3>${esc(challenge.prompt)}</h3><div class="mission-options">${challenge.options.map(option => `<button type="button" data-answer="${esc(option)}" ${passed[challenge.id] ? 'disabled' : ''}>${esc(option)}</button>`).join('')}</div><div class="mission-feedback" id="feedback-${esc(challenge.id)}">${passed[challenge.id] ? 'Passed. Re-open the source evidence and explain this in your own words.' : 'Choose an answer after studying the source evidence.'}</div></article>`;
   }).join('') || '<div class="ai-note">No questions are available for this focus. Choose Whole project or a broader related area.</div>';
   const pager = routeCount ? `<nav class="route-pager" aria-label="Learning route pages"><label for="questions-per-page">Questions shown per page<select id="questions-per-page">${pageSizeOptions(routeCount, pageSize)}</select></label><p aria-live="polite">Showing ${firstQuestion + 1}-${Math.min(firstQuestion + pageSize, routeCount)} of ${routeCount} questions. Page ${page} of ${pageCount}.</p><div><button class="secondary-inline" id="previous-question-page" ${page === 1 ? 'disabled' : ''}>Previous</button><button class="primary-inline" id="next-question-page" ${page === pageCount ? 'disabled' : ''}>Next</button></div></nav>` : '';
   pathView.innerHTML = `<p class="page-kicker">Learning missions</p><span class="mode-badge">${score} points proved</span><h2>Build your learning route</h2><p class="lead">Learn what each part does, why it exists, how it connects, and what a safe change could affect. Exact source locations are evidence—not the lesson.</p><div class="learn-controls"><label>What do you want to learn?<select id="question-scope"><option value="all">Whole project</option><option value="frontend">Frontend and UI</option><option value="backend">Backend and functions</option><option value="api">API and imports</option><option value="middleware">Middleware</option><option value="data">Data and persistence</option><option value="functions">Functions</option><option value="imports">Connections and imports</option><option value="evidence">Evidence and documents</option></select></label><label>Number of questions<select id="question-count">${questionCountOptions(meta, routeSelection.count)}</select></label><button class="primary-inline" id="load-questions" ${meta.available ? '' : 'disabled'}>Create learning route</button><button class="secondary-inline" id="open-deep-questions">Ask a deeper question</button></div><p class="recommendation" id="scope-availability" aria-live="polite">${availabilityMessage(meta)}</p><div class="proof-summary"><strong>${score}</strong><span>verified points</span><p>Pass missions to prove understanding. Full ownership still requires a real small change and a test.</p></div><div class="mission-grid">${missions}</div>${pager}`;
@@ -298,7 +298,7 @@ function renderPath(a, selectedChallenges = a.challenges || [], selection = { sc
   scopeSelect.addEventListener('change', () => refreshQuestionScope(scopeSelect.value));
   document.querySelector('#load-questions').addEventListener('click', () => loadQuestionRoute(scopeSelect.value, Number(document.querySelector('#question-count').value)));
   document.querySelector('#open-deep-questions').addEventListener('click', openDeepQuestions);
-  document.querySelectorAll('[data-mission]').forEach(card => card.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => verifyChallenge(card.dataset.mission, button.dataset.answer))));
+  document.querySelectorAll('[data-mission]').forEach(card => card.querySelectorAll('[data-answer]').forEach(button => button.addEventListener('click', () => verifyChallenge(card.dataset.mission, button.dataset.answer, card.dataset.verificationToken))));
   document.querySelector('#questions-per-page')?.addEventListener('change', event => renderPath(a, selectedChallenges, { ...routeSelection, page: 1, pageSize: Number(event.target.value) }));
   document.querySelector('#previous-question-page')?.addEventListener('click', () => renderPath(a, selectedChallenges, { ...routeSelection, page: page - 1 }));
   document.querySelector('#next-question-page')?.addEventListener('click', () => renderPath(a, selectedChallenges, { ...routeSelection, page: page + 1 }));
@@ -313,11 +313,11 @@ async function loadQuestionRoute(scope, count) {
     renderPath(state.analysis, result.questions, { scope: result.scope, count: result.questions.length, meta: result, page: 1 });
   } catch (error) { container.classList.remove('route-loading'); container.insertAdjacentHTML('afterbegin', `<div class="ai-note">Could not create this route: ${esc(error.message)}</div>`); }
 }
-async function verifyChallenge(challengeId, answer) {
+async function verifyChallenge(challengeId, answer, verificationToken) {
   const feedback = document.querySelector(`#feedback-${challengeId}`); if (!feedback) return;
   feedback.textContent = 'Checking source evidence...';
   try {
-    const response = await fetch('/api/challenge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: state.analysis.sessionId, challengeId, answer }) });
+    const response = await fetch('/api/challenge', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: state.analysis.sessionId, challengeId, answer, verificationToken }) });
     const result = await response.json(); if (!response.ok) throw new Error(result.error);
     const mission = feedback.closest('[data-mission]');
     mission?.querySelectorAll('[data-answer]').forEach(button => {
