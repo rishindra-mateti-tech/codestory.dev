@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-labelledby="title desc">
+  <title id="title">CodeStory mark</title>
+  <desc id="desc">Emerald rounded square with a C and a connected source path.</desc>
+  <rect x="7" y="7" width="114" height="114" rx="30" fill="#007A61"/>
+  <rect x="8" y="8" width="112" height="112" rx="29" fill="none" stroke="#0B5C4C" stroke-width="2"/>
+  <path d="M82 41.6C77.6 37.9 72.1 36 65.9 36c-15.5 0-27.8 12.3-27.8 28s12.3 28 27.8 28c6.2 0 11.9-2 16.3-5.7" fill="none" stroke="#FCFDFB" stroke-linecap="round" stroke-width="12"/>
+  <path d="M77.5 78.5h13.2c4.2 0 7.6-3.4 7.6-7.6V58.6" fill="none" stroke="#A8E4D4" stroke-linecap="round" stroke-linejoin="round" stroke-width="5"/>
+  <circle cx="98.3" cy="53.3" r="5.8" fill="#F2C66D"/>
+</svg>

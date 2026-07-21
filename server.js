@@ -2243,7 +2243,7 @@ export async function handler(req, res) {
   if (!file.startsWith(publicDir)) return send(res, 403, 'Forbidden', 'text/plain');
   try {
     const content = await fs.readFile(file);
-    const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream';
+    const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : file.endsWith('.svg') ? 'image/svg+xml' : 'application/octet-stream';
     return send(res, 200, content, type);
   } catch { return send(res, 404, 'Not found', 'text/plain'); }
 }

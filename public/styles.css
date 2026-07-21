@@ -6,7 +6,7 @@ button { cursor:pointer; }
 .shell { max-width:1440px; min-height:100dvh; margin:auto; padding:0 34px; }
 .topbar { height:86px; display:flex; align-items:center; justify-content:space-between; border-bottom:1px solid var(--line); }
 .brand { color:var(--ink); text-decoration:none; display:flex; gap:10px; align-items:center; font-size:18px; font-weight:700; letter-spacing:-.04em; }
-.brand-mark { width:29px; height:29px; border-radius:9px; display:grid; place-items:center; color:#fff; background:var(--pine); font-family:Georgia,serif; font-size:17px; font-weight:600; letter-spacing:0; }
+.brand-mark { width:29px; height:29px; border-radius:9px; display:block; flex:none; object-fit:contain; }
 .muted,.topbar-note { color:var(--muted); font-weight:500; }
 .topbar-note { font-size:13px; }
 .welcome { padding:86px 0 36px; display:grid; grid-template-columns:1.04fr .96fr; gap:64px 92px; align-items:center; }
