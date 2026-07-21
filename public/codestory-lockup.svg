@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 128" role="img" aria-labelledby="title desc">
+  <title id="title">CodeStory.tools</title>
+  <desc id="desc">CodeStory wordmark paired with its repository folder icon.</desc>
+  <g transform="translate(6 6)">
+    <path d="M27 24h22l7 10h16c6 0 10 4 10 10v12H67V48H46c-7 0-12 5-12 12v17c0 7 5 12 12 12h21v9H44c-15 0-27-12-27-27V37c0-7 4-13 10-13Z" fill="#007A61"/>
+    <path d="M24 58h37c5 0 9 4 9 9v1" fill="none" stroke="#10201D" stroke-linecap="round" stroke-width="7"/>
+    <path d="M42 59c0 9 8 16 17 16h8" fill="none" stroke="#D8F2E6" stroke-linecap="round" stroke-width="4"/>
+    <circle cx="75" cy="68" r="5" fill="#10201D"/>
+    <circle cx="67" cy="75" r="4.5" fill="#F2C66D"/>
+  </g>
+  <text x="112" y="79" fill="#10201D" font-family="Arial, Helvetica, sans-serif" font-size="54" font-weight="700" letter-spacing="-2.8">CodeStory<tspan font-weight="500">.tools</tspan></text>
+</svg>

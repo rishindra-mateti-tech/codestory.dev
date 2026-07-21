@@ -1,3 +1,5 @@
+<p align="center"><img src="./public/codestory-lockup.svg" alt="CodeStory.tools" width="360" /></p>
+
 # CodeStory.tools
 
 > Every repository has a story. Learn how it works.
