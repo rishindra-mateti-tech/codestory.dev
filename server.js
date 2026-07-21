@@ -2249,6 +2249,9 @@ export async function handler(req, res) {
 }
 
 export const server = http.createServer(handler);
+// Vercel can discover this root module while tracing api/index.js, so it also
+// needs a compatible default request handler in addition to the local server.
+export default handler;
 
 if (!process.env.VERCEL) {
   server.listen(PORT, '127.0.0.1', () => {

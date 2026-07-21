@@ -31,6 +31,18 @@ function createSimplePdf(text) {
   return pdf;
 }
 
+test('exports Vercel-compatible request handlers without starting a local listener', async () => {
+  const probe = spawn(process.execPath, ['--input-type=module', '--eval', "process.env.VERCEL = '1'; const serverModule = await import('./server.js'); const apiModule = await import('./api/index.js'); if (typeof serverModule.default !== 'function' || typeof apiModule.default !== 'function') process.exit(1); console.log('serverless exports ready');"], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+  const result = await new Promise(resolve => {
+    let output = '';
+    probe.stdout.on('data', chunk => { output += chunk; });
+    probe.stderr.on('data', chunk => { output += chunk; });
+    probe.on('close', code => resolve({ code, output }));
+  });
+  assert.equal(result.code, 0, result.output);
+  assert.match(result.output, /serverless exports ready/);
+});
+
 async function request(route, options = {}) {
   const response = await fetch(`${baseUrl}${route}`, options);
   const type = response.headers.get('content-type') || '';
