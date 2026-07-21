@@ -1,4 +1,4 @@
-<p align="center"><img src="./public/codestory-lockup.svg" alt="CodeStory.tools" width="360" /></p>
+<p align="center"><img src="./public/codestory-lockup.png" alt="CodeStory.tools" width="360" /></p>
 
 # CodeStory.tools
 
