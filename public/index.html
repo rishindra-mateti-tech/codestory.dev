@@ -44,6 +44,37 @@
           <div><span class="rail-number">02</span><strong>Learning path</strong><p>Study a project in the order it becomes understandable.</p></div>
           <div><span class="rail-number">03</span><strong>Local-first</strong><p>Analyze folders without uploading private source code.</p></div>
         </div>
+        <section class="local-project-guide" aria-labelledby="local-project-title">
+          <div class="local-project-heading">
+            <p class="eyebrow">Have a project on your computer?</p>
+            <h2 id="local-project-title">No worries. CodeStory can meet it there.</h2>
+            <p>Use the hosted site for public GitHub repositories. For a private project or a folder already on your computer, run CodeStory locally instead.</p>
+          </div>
+          <ol class="local-project-options">
+            <li>
+              <span class="guide-number">1</span>
+              <div>
+                <h3>Keep your project private</h3>
+                <p>Get CodeStory from <a href="https://github.com/rishindra-mateti-tech/codestory.dev" target="_blank" rel="noreferrer">github.com/rishindra-mateti-tech/codestory.dev</a>.</p>
+                <ol>
+                  <li>Download the ZIP or clone the repository.</li>
+                  <li>Open the <code>codestory.dev</code> folder, the one containing <code>package.json</code>.</li>
+                  <li>Run <code>npm install</code> once, then <code>npm start</code>.</li>
+                  <li>Open the local address shown in your terminal and paste the path to your project folder.</li>
+                </ol>
+                <p class="guide-note">Your project stays on your computer. This is also the mode that can use Ollama.</p>
+              </div>
+            </li>
+            <li>
+              <span class="guide-number">2</span>
+              <div>
+                <h3>Prefer zero setup?</h3>
+                <p>Put the project in a <strong>public</strong> GitHub repository, then paste its repository URL in the box above. The hosted CodeStory site will fetch and study that public source.</p>
+                <p class="guide-note">Do not make a private project public just for this. Use local CodeStory if the code is private or contains secrets.</p>
+              </div>
+            </li>
+          </ol>
+        </section>
       </section>
 
       <section id="workspace" class="workspace hidden" aria-live="polite">
