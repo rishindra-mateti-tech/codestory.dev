@@ -2,31 +2,70 @@
 
 > Every repository has a story. Learn how it works.
 
-CodeStory is a local-first learning companion for unfamiliar GitHub repositories. Paste a public GitHub URL or choose a local folder, then learn through three connected views of the same source evidence: a story, a direct system map, and an expandable technical breakdown.
+[![Live demo](https://img.shields.io/badge/Try%20it-Live%20Demo-0b745c?style=for-the-badge)](https://codestory-tools.vercel.app/)
+[![License](https://img.shields.io/badge/license-MIT-0f172a?style=for-the-badge)](LICENSE)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 
-## Start here (normal users)
+**CodeStory.tools** helps you understand an unfamiliar codebase end to end: its frontend, backend, APIs, data layer, UI elements, functions, imports, and the evidence connecting them.
 
-You need [Node.js 20 or newer](https://nodejs.org/). Git is only needed if you choose to clone the project instead of downloading it.
+It is built for students, developers, interview preparation, open-source contributors, and anyone who wants to go from _“I cloned this repository”_ to _“I can confidently explain how it works.”_
 
-**Important:** run `npm install` only *inside the CodeStory folder* — the folder that contains `package.json`. If your terminal says it cannot find `package.json`, you are one folder too high (for example, `C:\Users\rishi`) and must open the CodeStory folder first.
+## Try it instantly
 
-### Windows — easiest method
+No installation is needed for public GitHub repositories.
 
-1. On GitHub, click **Code** → **Download ZIP**. Extract the ZIP anywhere you like.
-2. Open the extracted `codestory.dev` folder in File Explorer. You should see `package.json`, `server.js`, and `Start CodeStory.vbs`.
-3. Click the File Explorer address bar, type `cmd`, and press Enter. This opens Command Prompt in the correct folder.
-4. Run these two commands:
+1. Open **[codestory-tools.vercel.app](https://codestory-tools.vercel.app/)**
+2. Paste a public GitHub repository URL.
+3. Select **Create story**.
+4. Explore the repository through architecture maps, source inspection, learning routes, CodeLab, and source-grounded questions.
 
-```bat
-npm install
-npm start
-```
+> If CodeStory helps you understand a repository, consider giving this project a star. It helps more learners discover it.
 
-5. Open [http://localhost:4173](http://localhost:4173) in your browser.
+[![Star CodeStory on GitHub](https://img.shields.io/badge/Star%20on-GitHub-181717?style=for-the-badge&logo=github)](https://github.com/rishindra-mateti-tech/codestory.dev)
 
-After the first `npm install`, you can also double-click **Start CodeStory.vbs** to start it at [http://localhost:4197](http://localhost:4197).
+---
 
-### Clone with Git (Windows, macOS, or Linux)
+## What CodeStory helps you learn
+
+| Area | What you can understand |
+|---|---|
+| Architecture | Frontend, backend, API/request handling, middleware, data/persistence, and supporting code |
+| Source connections | Imports, route declarations, client requests, service calls, schemas, and local module relationships |
+| UI inspector | UI components, visible controls, event handlers, nearby imports, props, CSS classes, and matching selectors |
+| Functions | What a function does, where it is defined, static references, nearby code, and its role in the flow |
+| Data contracts | TypeScript types, Zod schemas, Pydantic models, Prisma models, SQL tables, and JSON response shapes |
+| Repository learning | Story mode, direct technical mode, detailed mode, learning questions, and build-from-scratch guidance |
+| CodeLab | A small, safe learning version of a repository flow—without executing the original repository |
+| Change impact | The local files, imports, handlers, styles, and modules that may be affected before you change code |
+| Concepts | Plain-language explanations for common technologies such as React, Node.js, SQL, APIs, authentication, and databases |
+
+---
+
+## Two ways to use CodeStory
+
+| Your situation | Best option |
+|---|---|
+| You found a public GitHub repository and want to understand it quickly | Use the [hosted website](https://codestory-tools.vercel.app/) |
+| You want to study a private repository or a folder on your computer | Run CodeStory locally |
+| You want optional Ollama support for private, local AI explanations | Run CodeStory locally |
+| You want to contribute or modify CodeStory itself | Clone this repository and run it locally |
+
+---
+
+# Run CodeStory locally
+
+Running CodeStory locally lets you analyze folders on your own computer. Your source code stays on your machine.
+
+## Requirements
+
+- [Node.js 20 or newer](https://nodejs.org/)
+- Git is optional, but recommended if you clone this repository
+
+> Important: Run `npm install` only inside the CodeStory folder—the folder containing `package.json`.
+
+If your terminal says it cannot find `package.json`, you are probably one folder too high. Open the `codestory.dev` folder first.
+
+## Clone with Git
 
 ```bash
 git clone https://github.com/rishindra-mateti-tech/codestory.dev.git
@@ -35,11 +74,34 @@ npm install
 npm start
 ```
 
-Then open [http://localhost:4173](http://localhost:4173).
+Then open:
 
-### macOS
+```text
+http://localhost:4173
+```
 
-After cloning or downloading and extracting the project, open Terminal **inside the `codestory.dev` folder**, then run:
+## Windows: Download ZIP
+
+1. Open the [CodeStory GitHub repository](https://github.com/rishindra-mateti-tech/codestory.dev).
+2. Select **Code** → **Download ZIP**.
+3. Extract the ZIP file.
+4. Open the extracted `codestory.dev` folder in File Explorer.
+5. Confirm that you can see `package.json`.
+6. Click the File Explorer address bar, type `cmd`, and press Enter.
+7. Run:
+
+```bat
+npm install
+npm start
+```
+
+8. Open [http://localhost:4173](http://localhost:4173).
+
+After the first installation, Windows users can also double-click `Start CodeStory.vbs`.
+
+## macOS
+
+After cloning or extracting the project, open Terminal inside the `codestory.dev` folder and run:
 
 ```bash
 npm install
@@ -47,76 +109,196 @@ chmod +x "Start CodeStory.command"
 ./Start\ CodeStory.command
 ```
 
-If macOS asks, choose **Open**. CodeStory opens in your browser at [http://localhost:4173](http://localhost:4173).
+Then open [http://localhost:4173](http://localhost:4173).
 
-### What to do in CodeStory
+---
 
-Paste a public GitHub repository URL or enter a local folder path, choose **Create story**, then explore the architecture, UI/source inspector, learning route, CodeLab, and source-grounded chat.
+# Study a repository
 
-### Do I need an API key?
+## Public GitHub repository
 
-No. Static analysis, architecture maps, contracts, traces, learning routes, and CodeLab work without an API key. An optional Gemini key or local Ollama model only gives richer natural-language explanations.
+Paste a public repository URL into CodeStory:
 
-## What CodeStory v1 does
+```text
+https://github.com/owner/repository
+```
 
-- safely reads a local folder or shallow-clones a public GitHub repository
-- skips `.git`, dependencies, generated output, secrets, and other noisy folders
-- finds the stack from package/requirements files
-- maps folders, imports, files, and likely functions
-- detects common framework conventions and labels them as source evidence, not runtime proof
-- builds an Endpoint Map from explicit Next.js, Express, FastAPI, and Flask route declarations, and can connect a static client request to an exact local endpoint definition
-- follows an exact endpoint's own local imports into service or data code when source evidence supports that continuation
-- builds a Data Contract Map from explicit TypeScript shapes, Zod schemas, Pydantic models, Prisma models, SQL tables, and literal JSON response objects
-- maps visible UI elements to component context, imports, event handlers, static classes, and matching CSS selectors when available
-- provides Feature Trace and Change Impact views for studying a flow and reviewing the local code that may be affected by an edit
-- generates a source-cited `CODE_STORY.md`
-- generates a time-boxed `STUDY_PLAN.md` for local repositories
-- offers Story, Direct, Detailed, and Ask modes
-- lets a learner click the same technology, component, or function and switch between Story, Direct, and Detailed explanations
-- includes a local Concept Library for common tools such as Node.js, SQL, React, databases, APIs, and authentication
-- keeps the library's general explanation separate from direct evidence found in the repository being studied
-- discovers repository-specific packages, notebook libraries, and resolved local modules beyond the bundled reference pack
-- labels static call references honestly instead of presenting them as runtime telemetry
-- detects version-like folders and surfaces them instead of silently merging project variants
-- recognizes application, CLI, notebook, general-code, and documentation/reference repositories so it does not pretend every repository has a browser UI or API
-- prioritizes likely entry points, routes, source folders, and schema files when a large repository reaches the source-file reading limit
+Example:
 
-## Local-first by design
+```text
+https://github.com/rishindra-mateti-tech/codestory.dev
+```
 
-CodeStory does not run dependency installers, project scripts, Docker, or code from repositories it studies. V1 uses deterministic local analysis, so it needs no API key. An optional Ollama or API provider can deepen natural-language explanations while keeping repositories local.
+## Local folder
 
-## Optional explanation engines
+When running CodeStory locally, paste the full path to the project folder:
 
-- **Static analysis** works immediately, without any model or key.
-- **Gemini API** accepts a key for the current local session only. CodeStory does not write it to a file, database, or generated study guide. Create and restrict a key in [Google AI Studio](https://aistudio.google.com/app/apikey).
-- **Ollama** keeps model inference on the user's computer. Install Ollama, download a coding model such as `qwen2.5-coder:7b`, then choose Local Ollama in CodeStory.
+```text
+C:\Users\your-name\Desktop\my-project
+```
 
-CodeStory does not bundle model weights inside the Git repository: models are large downloads and the right choice depends on each user's hardware. The in-app setup wizard explains and downloads an approved model only after the user explicitly confirms it.
+or on macOS/Linux:
 
-## Concept Library
+```text
+/Users/your-name/Desktop/my-project
+```
 
-The bundled starter pack lives at `data/concept-library.json`. It works with no model and no API key. Search a term in the in-app **Concept Library** to see a standard explanation, plain-language explanation, typical uses, a small syntax example, connections, alternatives, and practical cautions.
+CodeStory reads source files safely. It does **not** run the project’s scripts, install its dependencies, run Docker, use its secrets, or contact its services.
 
-When a repository is open, CodeStory independently scans its code and `package.json` for direct references to that concept. The result is labeled **Observed in this repository**, **Not directly detected**, or **Repository comparison unavailable**. A library definition is never treated as proof that a scanned repository uses a tool.
+---
 
-The library also has a **Detected in this repository** section. It reads dependency manifests such as `package.json`, `requirements.txt`, `pyproject.toml`, `Cargo.toml`, `go.mod`, and `composer.json`, plus observed imports and resolved local modules. This is not limited to the starter pack. For an unknown package, CodeStory shows its exact source evidence and says that a general guide is not bundled yet instead of guessing what the tool does.
+# Learn in the right order
 
-## Development
+CodeStory is designed to help you learn a repository from zero to confidence.
+
+| Step | Goal |
+|---|---|
+| 1. Overview | Understand what the repository is built to do and where to start |
+| 2. Architecture | Identify frontend, backend, APIs, middleware, data, and supporting code |
+| 3. UI & source inspector | See how screens, components, events, imports, and styles were built |
+| 4. Learning route | Answer evidence-based questions in a useful order |
+| 5. Build from scratch | Reconstruct a smaller version of the system and understand why each part exists |
+| 6. Ask CodeStory | Ask source-grounded questions after mapping the repository |
+
+## Learning modes
+
+| Mode | Best for |
+|---|---|
+| Story mode | Understanding the project through an intuitive narrative |
+| Direct mode | Seeing the real architecture without metaphors |
+| Detailed mode | Inspecting components, functions, paths, code evidence, and connections |
+| Learn & prove | Building confidence through source-backed questions |
+| CodeLab | Practicing a smaller, safe version of a repository flow |
+
+---
+
+# API keys and local models
+
+An API key is **not required** for the main CodeStory experience.
+
+| Capability | Requires API key? |
+|---|---:|
+| Architecture map | No |
+| Import and endpoint mapping | No |
+| UI and source inspection | No |
+| Function and contract discovery | No |
+| Learning routes | No |
+| CodeLab | No |
+| Concept Library | No |
+| Richer natural-language explanations | Optional |
+| Local Ollama explanations | No cloud API key required |
+
+## Optional AI explanations
+
+You may optionally use:
+
+- **Gemini API** for richer explanations
+- **Ollama** for local inference on your own computer
+
+CodeStory keeps optional API keys in the current session only. It does not write them into generated study guides or project files.
+
+For Ollama, install Ollama and download a coding model such as:
 
 ```bash
+ollama pull qwen2.5-coder:7b
+```
+
+Model downloads are intentionally not bundled with this repository because they are large and depend on your computer’s memory and hardware.
+
+---
+
+# Evidence-first by design
+
+CodeStory separates what it can **prove from source code** from what it can only **suggest**.
+
+| Evidence type | How CodeStory treats it |
+|---|---|
+| Code, imports, configuration, schemas, route declarations | Source-backed evidence |
+| README files | Helpful context, not automatic proof |
+| Architecture diagrams and screenshots | Context only until source code supports the claim |
+| Static function references | A learning signal, not runtime telemetry |
+| Dynamic runtime behavior | Clearly marked as unverified unless explicitly observed |
+
+This prevents misleading explanations when a repository contains incomplete diagrams, old screenshots, generated code, academic artifacts, or unused files.
+
+---
+
+# Supported repository types
+
+CodeStory adapts its learning experience for more than traditional web apps.
+
+| Repository type | Examples |
+|---|---|
+| Web applications | React, Next.js, Vue, Svelte, Express, FastAPI, Flask |
+| APIs and backend services | REST APIs, service layers, route handlers, schemas |
+| CLI tools | Node.js, Python, Go, Rust command-line projects |
+| Notebooks | Jupyter notebooks and notebook-based projects |
+| Libraries and packages | Reusable SDKs, utilities, frameworks, and tools |
+| Documentation/reference repositories | Repositories that do not have a browser UI or backend |
+
+CodeStory does not assume every repository has a frontend, database, API, or deployable application.
+
+---
+
+# Safety and privacy
+
+- CodeStory does not execute repositories it studies.
+- CodeStory does not run dependency installers inside scanned repositories.
+- CodeStory does not run Docker, shell scripts, or project services.
+- The hosted website analyzes public GitHub repositories.
+- For private repositories or local folders, run CodeStory locally.
+- Local Ollama can keep model inference on your machine.
+
+---
+
+# Development
+
+```bash
+npm install
 npm run check
 npm test
 npm start
 ```
 
-## For contributors and Buildweek judges
+## Quality checks
 
-Most users do **not** need these files. They are only for contributors, demo presenters, and people who want implementation details:
+```bash
+npm run check
+npm test
+npm audit --omit=dev --audit-level=high
+```
 
-- [DEMO.md](DEMO.md): 90-second Buildweek demo script.
-- [Product & Architecture Guide](docs/PRODUCT_AND_ARCHITECTURE.md): evidence rules, implementation design, and limitations.
-- [V1 Release Notes](docs/V1_RELEASE.md): v1 scope and validation record.
+---
 
-## License
+# Documentation
 
-MIT
+Most users only need the live website or the local setup steps above.
+
+These documents are for contributors, Buildweek judges, and developers who want implementation details:
+
+| Document | Purpose |
+|---|---|
+| [DEMO.md](DEMO.md) | 90-second Buildweek demo flow and safe product claims |
+| [Product & Architecture Guide](docs/PRODUCT_AND_ARCHITECTURE.md) | Product behavior, evidence rules, architecture, and known limitations |
+| [V1 Release Notes](docs/V1_RELEASE.md) | v1 scope and release validation record |
+
+---
+
+# Contributing
+
+Contributions, bug reports, feature ideas, and repository examples are welcome.
+
+Before opening a pull request:
+
+```bash
+npm run check
+npm test
+```
+
+If you find CodeStory useful, please consider starring the repository and sharing it with someone learning an unfamiliar codebase.
+
+---
+
+# License
+
+[MIT](LICENSE)
