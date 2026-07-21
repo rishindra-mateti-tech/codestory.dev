@@ -31,6 +31,18 @@ function createSimplePdf(text) {
   return pdf;
 }
 
+async function stopTestServer(child) {
+  if (!child?.pid || child.exitCode !== null) return;
+  if (process.platform === 'win32') {
+    const killer = spawn('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
+    await new Promise(resolve => killer.once('close', resolve));
+    return;
+  }
+  const stopped = new Promise(resolve => child.once('close', resolve));
+  child.kill('SIGTERM');
+  await stopped;
+}
+
 test('exports Vercel-compatible request handlers without starting a local listener', async () => {
   const probe = spawn(process.execPath, ['--input-type=module', '--eval', "process.env.VERCEL = '1'; const serverModule = await import('./server.js'); const apiModule = await import('./api/index.js'); if (typeof serverModule.default !== 'function' || typeof apiModule.default !== 'function') process.exit(1); console.log('serverless exports ready');"], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
   const result = await new Promise(resolve => {
@@ -114,7 +126,7 @@ before(async () => {
 });
 
 after(async () => {
-  server?.kill();
+  await stopTestServer(server);
   await rm(fixture, { recursive: true, force: true });
   await rm(pythonCliFixture, { recursive: true, force: true });
   await rm(notebookFixture, { recursive: true, force: true });
