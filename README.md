@@ -1,10 +1,11 @@
 # CodeStory.tools
 
 > Every repository has a story. Learn how it works.
+[![Try CodeStory](https://img.shields.io/badge/Try_CodeStory-Live_Demo-0b745c?style=for-the-badge)](https://codestory-tools.vercel.app/)
 
-[![Live demo](https://img.shields.io/badge/Try%20it-Live%20Demo-0b745c?style=for-the-badge)](https://codestory-tools.vercel.app/)
-[![License](https://img.shields.io/badge/license-MIT-0f172a?style=for-the-badge)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
+[![MIT License](https://img.shields.io/badge/License-MIT-0f172a?style=for-the-badge)](LICENSE)
+
+[![Requires Node.js 20+](https://img.shields.io/badge/Requires-Node.js_20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org/)
 
 **CodeStory.tools** helps you understand an unfamiliar codebase end to end: its frontend, backend, APIs, data layer, UI elements, functions, imports, and the evidence connecting them.
 
