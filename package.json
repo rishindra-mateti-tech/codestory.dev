@@ -10,7 +10,7 @@
     "start": "node server.js",
     "start:mac": "node cli.js start",
     "dev": "node server.js",
-    "check": "node --check server.js && node --check cli.js && node --check public/app.js",
+    "check": "node --check server.js && node --check cli.js && node --check public/app.js && node --check api/index.js",
     "test": "node --test test/*.test.js"
   },
   "keywords": [
@@ -25,6 +25,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "adm-zip": "^0.5.18",
     "pdfjs-dist": "^5.4.530"
   }
 }

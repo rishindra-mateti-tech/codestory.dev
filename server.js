@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { getDocument } from 'pdfjs-dist/legacy/build/pdf.mjs';
+import AdmZip from 'adm-zip';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(root, 'public');
@@ -17,6 +18,8 @@ const codeExtensions = new Set(['.js', '.jsx', '.ts', '.tsx', '.py', '.go', '.rs
 const MAX_REPOSITORY_FILES = 500;
 const MAX_SOURCE_FILES = 160;
 const REMOTE_CLONE_TIMEOUT_MS = 240_000;
+const MAX_REMOTE_ARCHIVE_BYTES = 25 * 1024 * 1024;
+const isHosted = process.env.CODESTORY_HOSTED === 'true' || process.env.VERCEL === '1';
 const sessions = new Map();
 let conceptLibraryPromise;
 
@@ -60,26 +63,68 @@ async function readBody(req) {
   return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
 }
 
-function safeGithubUrl(value) {
+function githubRepository(value) {
   try {
     const url = new URL(value);
-    return url.protocol === 'https:' && url.hostname === 'github.com' && url.pathname.split('/').filter(Boolean).length >= 2;
-  } catch { return false; }
+    const parts = url.pathname.split('/').filter(Boolean);
+    if (url.protocol !== 'https:' || url.hostname !== 'github.com' || parts.length !== 2) return null;
+    const [owner, repository] = parts;
+    const name = repository.replace(/\.git$/i, '');
+    if (!owner || !name) return null;
+    return { owner, name };
+  } catch { return null; }
+}
+
+function safeGithubUrl(value) {
+  return Boolean(githubRepository(value));
+}
+
+async function downloadGithubArchive(input) {
+  const repository = githubRepository(input);
+  if (!repository) throw new Error('Paste a public https://github.com/owner/repository URL.');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REMOTE_CLONE_TIMEOUT_MS);
+  try {
+    const archiveUrl = `https://codeload.github.com/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/zip/HEAD`;
+    const response = await fetch(archiveUrl, { signal: controller.signal, redirect: 'follow' });
+    if (!response.ok) throw new Error(response.status === 404 ? 'That GitHub repository was not found or is not public.' : `GitHub could not download this repository (HTTP ${response.status}).`);
+    const declaredSize = Number(response.headers.get('content-length') || 0);
+    if (declaredSize > MAX_REMOTE_ARCHIVE_BYTES) throw new Error('This public repository archive is larger than 25 MB. Clone it locally and study the folder with CodeStory instead.');
+    const archive = Buffer.from(await response.arrayBuffer());
+    if (archive.length > MAX_REMOTE_ARCHIVE_BYTES) throw new Error('This public repository archive is larger than 25 MB. Clone it locally and study the folder with CodeStory instead.');
+    const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'codestory-'));
+    const folder = path.join(cloneRoot, 'repository');
+    await fs.mkdir(folder, { recursive: true });
+    const zip = new AdmZip(archive);
+    let extracted = 0;
+    for (const entry of zip.getEntries()) {
+      if (entry.isDirectory) continue;
+      const segments = entry.entryName.replace(/\\/g, '/').split('/').filter(Boolean);
+      segments.shift();
+      const relative = segments.join('/');
+      if (!relative || relative.includes('..')) continue;
+      const destination = path.resolve(folder, relative);
+      if (!destination.startsWith(`${folder}${path.sep}`)) continue;
+      await fs.mkdir(path.dirname(destination), { recursive: true });
+      await fs.writeFile(destination, entry.getData());
+      extracted += 1;
+    }
+    if (!extracted) {
+      await fs.rm(cloneRoot, { recursive: true, force: true }).catch(() => {});
+      throw new Error('GitHub returned an empty repository archive.');
+    }
+    return { folder, source: input, temporary: true };
+  } catch (error) {
+    if (error.name === 'AbortError') throw new Error('This public repository took longer than four minutes to download. Clone it locally, then choose its folder so CodeStory can scan it without a network deadline.');
+    throw error;
+  } finally { clearTimeout(timer); }
 }
 
 async function resolveTarget(input) {
   if (safeGithubUrl(input)) {
-    const cloneRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'codestory-'));
-    const folder = path.join(cloneRoot, 'repository');
-    try {
-      await command('git', ['clone', '--depth', '1', '--single-branch', '--no-tags', '--filter=blob:none', input.replace(/\/$/, ''), folder], undefined, REMOTE_CLONE_TIMEOUT_MS);
-    } catch (error) {
-      await fs.rm(cloneRoot, { recursive: true, force: true }).catch(() => {});
-      if (/timed out/i.test(error.message)) throw new Error('This public repository took longer than four minutes to download. Clone it locally, then choose its folder so CodeStory can scan it without a network deadline.');
-      throw error;
-    }
-    return { folder, source: input, temporary: true };
+    return downloadGithubArchive(input);
   }
+  if (isHosted) throw new Error('The hosted CodeStory website studies public GitHub repository URLs only. To study a private repository or local folder, run the local CodeStory app on your computer.');
   if (/^https?:\/\//i.test(input)) throw new Error('CodeStory currently accepts public https://github.com/owner/repository URLs. Clone private or other-hosted repositories locally, then choose their folder.');
   const folder = path.resolve(input);
   let stat;
@@ -2096,7 +2141,7 @@ async function explainConcept(session, concept, settings) {
   } catch (error) { return { ...staticAnswer, evidence: concept.evidence, confidence: `AI provider unavailable; using static evidence instead.` }; }
 }
 
-const server = http.createServer(async (req, res) => {
+export async function handler(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (req.method === 'GET' && url.pathname === '/api/default-target') {
     const encoded = process.env.CODESTORY_TARGET;
@@ -2201,19 +2246,23 @@ const server = http.createServer(async (req, res) => {
     const type = file.endsWith('.html') ? 'text/html' : file.endsWith('.css') ? 'text/css' : file.endsWith('.js') ? 'text/javascript' : 'application/octet-stream';
     return send(res, 200, content, type);
   } catch { return send(res, 404, 'Not found', 'text/plain'); }
-});
+}
 
-server.listen(PORT, '127.0.0.1', () => {
-  const activePort = server.address().port;
-  const address = `http://localhost:${activePort}`;
-  console.log(`\nCodeStory.tools is ready at ${address}\n`);
-  if (process.env.CODESTORY_AUTO_OPEN === 'true') {
-    const opener = process.platform === 'win32'
-      ? ['cmd', ['/c', 'start', '', address]]
-      : process.platform === 'darwin'
-        ? ['open', [address]]
-        : ['xdg-open', [address]];
-    const browser = spawn(opener[0], opener[1], { detached: true, stdio: 'ignore', windowsHide: true });
-    browser.unref();
-  }
-});
+export const server = http.createServer(handler);
+
+if (!process.env.VERCEL) {
+  server.listen(PORT, '127.0.0.1', () => {
+    const activePort = server.address().port;
+    const address = `http://localhost:${activePort}`;
+    console.log(`\nCodeStory.tools is ready at ${address}\n`);
+    if (process.env.CODESTORY_AUTO_OPEN === 'true') {
+      const opener = process.platform === 'win32'
+        ? ['cmd', ['/c', 'start', '', address]]
+        : process.platform === 'darwin'
+          ? ['open', [address]]
+          : ['xdg-open', [address]];
+      const browser = spawn(opener[0], opener[1], { detached: true, stdio: 'ignore', windowsHide: true });
+      browser.unref();
+    }
+  });
+}
