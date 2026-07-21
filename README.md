@@ -281,7 +281,6 @@ These documents are for contributors, Buildweek judges, and developers who want 
 
 | Document | Purpose |
 |---|---|
-| [DEMO.md](DEMO.md) | 90-second Buildweek demo flow and safe product claims |
 | [Product & Architecture Guide](docs/PRODUCT_AND_ARCHITECTURE.md) | Product behavior, evidence rules, architecture, and known limitations |
 | [V1 Release Notes](docs/V1_RELEASE.md) | v1 scope and release validation record |
 
