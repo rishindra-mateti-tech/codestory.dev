@@ -21,14 +21,51 @@ const MAX_REMOTE_ARCHIVE_BYTES = 25 * 1024 * 1024;
 const MAX_REMOTE_SAMPLE_FILES = 220;
 const MAX_REMOTE_SAMPLE_FILE_BYTES = 1_500_000;
 const CHALLENGE_TOKEN_TTL_MS = 2 * 60 * 60 * 1000;
-const challengeTokenKey = createHash('sha256').update(process.env.CODESTORY_CHALLENGE_TOKEN_SECRET || 'codestory-learning-token-v1-change-this-with-an-environment-secret').digest();
+const ANALYZE_RATE_LIMIT_WINDOW_MS = 5 * 60 * 1000;
+const ANALYZE_RATE_LIMIT_MAX = 12;
 const isHosted = process.env.CODESTORY_HOSTED === 'true' || process.env.VERCEL === '1';
+const challengeTokenSecret = process.env.CODESTORY_CHALLENGE_TOKEN_SECRET;
+if (isHosted && !challengeTokenSecret) {
+  console.warn('CODESTORY_CHALLENGE_TOKEN_SECRET is not set. Learning-check tokens fall back to a key published in this open-source repository, so treat "Learn & prove" scores as informal on this deployment until the secret is configured in your hosting provider.');
+}
+const challengeTokenKey = createHash('sha256').update(challengeTokenSecret || 'codestory-learning-token-v1-change-this-with-an-environment-secret').digest();
 const sessions = new Map();
+const analyzeRateLimits = new Map();
 let conceptLibraryPromise;
 
+// script-src needs 'unsafe-eval' because the CodeLab worker (public/app.js) runs learner code
+// via `new Function(...)`; blob: workers inherit the page's CSP, so this can't be scoped tighter.
+const SECURITY_HEADERS = {
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-eval'; style-src 'self'; img-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; object-src 'none'"
+};
+
 function send(res, status, body, type = 'application/json') {
-  res.writeHead(status, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'no-store' });
+  res.writeHead(status, { 'Content-Type': `${type}; charset=utf-8`, 'Cache-Control': 'no-store', ...SECURITY_HEADERS });
   res.end(type === 'application/json' ? JSON.stringify(body) : body);
+}
+
+function clientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length) return forwarded.split(',')[0].trim();
+  return req.socket?.remoteAddress || 'unknown';
+}
+
+function analyzeRateLimited(ip) {
+  const now = Date.now();
+  if (analyzeRateLimits.size > 5000) {
+    for (const [key, value] of analyzeRateLimits) if (now - value.windowStart > ANALYZE_RATE_LIMIT_WINDOW_MS) analyzeRateLimits.delete(key);
+  }
+  const entry = analyzeRateLimits.get(ip);
+  if (!entry || now - entry.windowStart > ANALYZE_RATE_LIMIT_WINDOW_MS) {
+    analyzeRateLimits.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  return entry.count > ANALYZE_RATE_LIMIT_MAX;
 }
 
 function command(command, args, cwd, timeoutMs = 90_000) {
@@ -2240,6 +2277,7 @@ export async function handler(req, res) {
     } catch (error) { return send(res, 500, { error: error.message || 'CodeStory could not search the Concept Library.' }); }
   }
   if (req.method === 'POST' && url.pathname === '/api/analyze') {
+    if (isHosted && analyzeRateLimited(clientIp(req))) return send(res, 429, { error: 'Too many analysis requests from this network. Wait a few minutes, or run CodeStory locally for unlimited use.' });
     try { const body = await readBody(req); return send(res, 200, await analyze(body.target, body.settings)); }
     catch (error) { return send(res, 400, { error: error.message }); }
   }

@@ -429,3 +429,35 @@ test('only permits approved explicit local-model downloads', async () => {
   assert.equal(response.status, 400);
   assert.match(body.error, /recommended local models/i);
 });
+
+test('applies hardening headers to both page and API responses', async () => {
+  const page = await request('/');
+  assert.equal(page.response.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(page.response.headers.get('x-frame-options'), 'DENY');
+  assert.ok(page.response.headers.get('content-security-policy')?.includes("default-src 'self'"));
+  const api = await request('/api/challenges/meta?sessionId=missing&scope=all');
+  assert.equal(api.response.headers.get('x-content-type-options'), 'nosniff');
+  assert.ok(api.response.headers.get('content-security-policy')?.includes("worker-src 'self' blob:"));
+});
+
+test('rate-limits repeated hosted analyze requests but leaves local runs unlimited', async () => {
+  const hostedServer = spawn(process.execPath, ['server.js'], { cwd: root, env: { ...process.env, PORT: '0', CODESTORY_HOSTED: 'true' }, stdio: ['ignore', 'pipe', 'pipe'] });
+  try {
+    const port = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error('Hosted server did not start')), 5000);
+      hostedServer.stdout.on('data', data => {
+        const match = data.toString().match(/http:\/\/localhost:(\d+)/);
+        if (match) { clearTimeout(timer); resolve(match[1]); }
+      });
+      hostedServer.once('error', reject);
+    });
+    const hostedUrl = `http://127.0.0.1:${port}`;
+    const attempt = () => fetch(`${hostedUrl}/api/analyze`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ target: 'not a valid target' }) });
+    const statuses = [];
+    for (let index = 0; index < 14; index += 1) statuses.push((await attempt()).status);
+    assert.ok(statuses.slice(0, 12).every(status => status === 400));
+    assert.ok(statuses.slice(12).every(status => status === 429));
+  } finally {
+    await stopTestServer(hostedServer);
+  }
+});

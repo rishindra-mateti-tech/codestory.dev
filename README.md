@@ -273,6 +273,15 @@ npm test
 npm audit --omit=dev --audit-level=high
 ```
 
+## Environment variables (self-hosting)
+
+Only needed if you deploy your own copy of CodeStory (for example on Vercel). Local `npm start` usage needs none of these.
+
+| Variable | Purpose |
+|---|---|
+| `CODESTORY_HOSTED` | Set to `true` to run in hosted mode: disables local-folder analysis and enables per-IP rate limiting on `/api/analyze`. Vercel deployments detect this automatically from `VERCEL=1`. |
+| `CODESTORY_CHALLENGE_TOKEN_SECRET` | Signs the "Learn & prove" verification tokens. Without it, CodeStory falls back to a key published in this open-source repository, so set a real secret before relying on hosted quiz scores. |
+
 ---
 
 # Documentation
