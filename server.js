@@ -2264,7 +2264,19 @@ async function explainConcept(session, concept, settings) {
   } catch (error) { return { ...staticAnswer, evidence: concept.evidence, confidence: `AI provider unavailable; using static evidence instead.` }; }
 }
 
+// A top-level guard: `handler` is an async function wired directly into http.createServer,
+// so an uncaught throw anywhere below (a routing bug, a malformed request) would become an
+// unhandled promise rejection and crash the whole process for every in-flight request.
 export async function handler(req, res) {
+  try {
+    await route(req, res);
+  } catch (error) {
+    console.error('Unhandled request error:', error);
+    if (!res.headersSent) send(res, 500, { error: 'CodeStory hit an unexpected error handling this request.' });
+  }
+}
+
+async function route(req, res) {
   const url = new URL(req.url, `http://${req.headers.host}`);
   if (req.method === 'GET' && url.pathname === '/api/default-target') {
     const encoded = process.env.CODESTORY_TARGET;
