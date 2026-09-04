@@ -1,5 +1,6 @@
 node_modules/
 .codestory/
 codestory-output/
-.env
+.env*
+.vercel
 .DS_Store
